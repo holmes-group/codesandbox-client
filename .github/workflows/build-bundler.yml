@@ -29,11 +29,11 @@ jobs:
     permissions:
       contents: write
       packages: write
-    
+
     env:
       NODE_ENV: development
       NODE_OPTIONS: "--max-old-space-size=4096"
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
 
       - name: Build dependencies
         run: yarn build:deps
-          
+
       - name: Build common, components, and app packages
         run: lerna run build --scope @codesandbox/common --scope @codesandbox/components --scope app
 
@@ -86,7 +86,7 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -122,29 +122,29 @@ jobs:
             ls -la
             exit 1
           fi
-          
+
           # Create nginx config directory
           mkdir -p docker-context/.github/nginx
-          
+
           # Create a basic nginx config
           echo 'server {
             listen 80;
             server_name _;
-            
+
             # Enable gzip compression
             gzip on;
             gzip_types text/plain text/css application/javascript application/json;
-            
+
             location / {
                 root /usr/share/nginx/html;
                 index index.html;
                 try_files $uri $uri/ /index.html;
-                
+
                 # Set CORS headers
                 add_header "Access-Control-Allow-Origin" "*" always;
                 add_header "Cache-Control" "public, max-age=86400, immutable";
             }
-            
+
             # Special handling for worker files
             location ~ \.worker\.js$ {
                 root /usr/share/nginx/html;
@@ -152,17 +152,17 @@ jobs:
                 add_header "Content-Type" "application/javascript" always;
             }
           }' > docker-context/.github/nginx/default.conf
-          
+
           # Create Dockerfile.bundler in the new context
           cat > docker-context/Dockerfile.bundler << 'EOF'
-          FROM nginx:alpine
+          FROM nginxinc/nginx-unprivileged:alpine3.21
           COPY www /usr/share/nginx/html
           COPY .github/nginx/default.conf /etc/nginx/conf.d/default.conf
-          EXPOSE 80
-          HEALTHCHECK --interval=30s --timeout=3s CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+          EXPOSE 8080
+          HEALTHCHECK --interval=30s --timeout=3s CMD wget --quiet --tries=1 --spider http://localhost:8080/ || exit 1
           CMD ["nginx", "-g", "daemon off;"]
           EOF
-          
+
           echo "Contents of docker-context:"
           ls -la docker-context
           echo "Contents of docker-context/www (if it exists):"
