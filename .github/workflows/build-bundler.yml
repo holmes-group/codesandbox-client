@@ -128,7 +128,7 @@ jobs:
 
           # Create a basic nginx config
           echo 'server {
-            listen 80;
+            listen 8080;
             server_name _;
 
             # Enable gzip compression
